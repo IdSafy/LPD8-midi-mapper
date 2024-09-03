@@ -1,0 +1,50 @@
+{
+    "mode": "vm",
+    "source_device_name": "LPD8 mk2",
+    "target_devices_names": ["loopMIDI Port1", "loopMIDI Port2"],
+    "pads_config": [
+        {
+            "cc": 12,
+            "rgb": [0, 255, 255],
+            "static": true
+        },
+        {
+            "cc": 13,
+            "rgb": [144, 238, 0]
+        },
+        {
+            "cc": 14,
+            "rgb": [144, 0, 144]
+        },
+        {
+            "cc": 15,
+            "rgb": [144, 238, 144],
+            "reverse": true
+        },
+        {
+            "cc": 16,
+            "rgb": [0, 255, 0]
+        },
+        {
+            "cc": 17,
+            "rgb": [0, 255, 0]
+        },
+        {
+            "cc": 18,
+            "rgb": [0, 126, 0],
+            "static": true
+        },
+        {
+            "cc": 19,
+            "rgb": [255, 0, 0],
+            "static": true
+        }
+    ],
+
+    "vm_parameter_to_cc":{
+        "Strip(1).mute": 15,
+        "Strip(0).B2": 14,
+        "Strip(3).B2": 13
+    },
+    "vm_button_to_cc": {}
+}
