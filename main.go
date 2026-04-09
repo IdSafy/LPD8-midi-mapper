@@ -33,10 +33,11 @@ func vmInitConnection() (*voicemeeter.Remote, *chan string, error) {
 }
 
 type PadConfig struct {
-	CC      uint8    `json:"cc"`
-	RGB     [3]uint8 `json:"rgb"`
-	Static  bool     `json:"static" default:"false"`
-	Reverse bool     `json:"reverse" default:"false"`
+	CC             uint8    `json:"cc"`
+	RGB            [3]uint8 `json:"rgb"`
+	AlternativeRGB [3]uint8 `json:"alternative_rgb" default:"[0,255,255]"`
+	Static         bool     `json:"static" default:"false"`
+	Reverse        bool     `json:"reverse" default:"false"`
 }
 
 type Config struct {
@@ -110,6 +111,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Printf("Loaded config: %+v", config)
 
 	n_pads := 8
 	padsStateArray := NewPadsStateArray(n_pads, config.PadsConfig)
@@ -201,7 +204,7 @@ func main() {
 				stateArrayIndex, ok := ccToStateArrayIndex[cc]
 				if ok && value != 0 {
 					padsStateArray.Switch(stateArrayIndex)
-					sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorChangeSysEx()))
+					sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorChangeSysEx("main")))
 				}
 			}
 		}
@@ -236,8 +239,9 @@ func main() {
 		}
 	}
 
-	sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorChangeSysEx()))
-
+	sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorChangeSysEx("main")))
+	sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorAlternativeChangeSysEx()))
+	return
 	if config.Mode == "vm" {
 		vm, vm_events, err := vmInitConnection()
 		log.Printf("Voicemeeter connection established")
@@ -276,7 +280,7 @@ func update_pads_from_vm(s string, vm *voicemeeter.Remote, vm_parameter_to_cc ma
 				matrix.GetElement(state_array_index).On = value == "1.000"
 			}
 		}
-		source_device.OutPort.Send(midi.SysEx(matrix.ToColorChangeSysEx()))
+		source_device.OutPort.Send(midi.SysEx(matrix.ToColorChangeSysEx("main")))
 	case "mdirty":
 		for button, cc := range vm_button_to_cc {
 			value := vm.Button[button].State()
@@ -285,7 +289,7 @@ func update_pads_from_vm(s string, vm *voicemeeter.Remote, vm_parameter_to_cc ma
 				matrix.GetElement(state_array_index).On = value
 			}
 		}
-		source_device.OutPort.Send(midi.SysEx(matrix.ToColorChangeSysEx()))
+		source_device.OutPort.Send(midi.SysEx(matrix.ToColorChangeSysEx("main")))
 	default:
 	}
 }

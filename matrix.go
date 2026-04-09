@@ -1,5 +1,7 @@
 package main
 
+import "log"
+
 // RGB represents an RGB color.
 type RGB struct {
 	Red   uint8
@@ -20,10 +22,11 @@ func (rgb *RGB) ToAkaiBytes() []byte {
 
 // PadState represents a single element in the matrix.
 type PadState struct {
-	On      bool // State of the element (on or off)
-	Color   RGB  // RGB color of the element
-	Reverse bool
-	Static  bool
+	On               bool // State of the element (on or off)
+	Color            RGB  // RGB color of the element
+	AlternativeColor RGB  // RGB color used when pressed
+	Reverse          bool
+	Static           bool
 }
 
 // PadsStateArray represents an n x m matrix.
@@ -38,10 +41,11 @@ func NewPadsStateArray(lenght int, pads_config []PadConfig) *PadsStateArray {
 	}
 	for i := 0; i < lenght; i++ {
 		array.Elements[i] = PadState{
-			On:      false,
-			Color:   RGB{pads_config[i].RGB[0], pads_config[i].RGB[1], pads_config[i].RGB[2]},
-			Reverse: pads_config[i].Reverse,
-			Static:  pads_config[i].Static,
+			On:               false,
+			Color:            RGB{pads_config[i].RGB[0], pads_config[i].RGB[1], pads_config[i].RGB[2]},
+			AlternativeColor: RGB{pads_config[i].AlternativeRGB[0], pads_config[i].AlternativeRGB[1], pads_config[i].AlternativeRGB[2]},
+			Reverse:          pads_config[i].Reverse,
+			Static:           pads_config[i].Static,
 		}
 	}
 	return array
@@ -88,9 +92,13 @@ func (m *PadsStateArray) isValidPosition(index int) bool {
 	return index >= 0 && index < len(m.Elements)
 }
 
-func (m *PadsStateArray) ToColorChangeSysEx() []byte {
+func (m *PadsStateArray) ToColorChangeSysEx(kind string) []byte {
+	if kind == "alternative" {
+		return m.ToColorAlternativeChangeSysEx()
+	}
+	var kind_byte byte = 0x06
 	var sysex []byte
-	sysex = append(sysex, 0x47, 0x7F, 0x4C, 0x06, 0x00, 0x30)
+	sysex = append(sysex, 0x47, 0x7F, 0x4C, kind_byte, 0x00, 0x30)
 	for i := 0; i < len(m.Elements); i++ {
 		shouldLight := m.Elements[i].On || m.Elements[i].Static
 		if m.Elements[i].Reverse {
@@ -102,5 +110,68 @@ func (m *PadsStateArray) ToColorChangeSysEx() []byte {
 			sysex = append(sysex, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
 		}
 	}
+	return sysex
+}
+
+func (m *PadsStateArray) ToColorAlternativeChangeSysEx() []byte {
+	var kind_byte byte = 0x06
+	var sysex []byte
+	sysex = append(sysex, 0x47, 0x7F, 0x4C, kind_byte, 0x03, 0x30)
+	// for i := 0; i < len(m.Elements); i++ {
+	// 	// sysex = append(sysex, m.Elements[i].AlternativeColor.ToAkaiBytes()...)
+	// 	if i == 3 {
+	// 		sysex = append(sysex, 127, 127, 127, 127, 127, 127)
+	// 	} else {
+	// 		sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+	// 	}
+
+	// }
+	// sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 0, 0, 0, 0, 0, 127)
+	// // 3 - 3G 127 range
+	// // 4 - 3G 127 range
+	// // 5 - 3B 255 range
+	// // 6 - 5R 127 range <<<
+	// sysex = append(sysex, 0, 0, 0, 0)
+
+	// // 1 - 5R 255 range
+	// // 2 - 5G 255 range
+	// // 3 - 5G 255 range
+	// // 4 - 5B 127 range
+
+	// sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 127, 0, 0, 0, 0, 0)
+	// // sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+	sysex = append(sysex, 0, 0, 0)
+
+	// sysex = append(sysex, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 0, 0, 0, 0, 0)
+
+	// sysex = append(sysex, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 127, 0, 0, 0) //BB
+	// sysex = append(sysex, 0, 0, 0, 0, 0, 0)
+	// sysex = append(sysex, 0, 0, 0, 0, 0)
+
+	log.Printf("Alternative sysex: %v", sysex)
 	return sysex
 }
