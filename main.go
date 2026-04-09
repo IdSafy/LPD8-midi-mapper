@@ -50,6 +50,8 @@ type Config struct {
 
 	VmParameterToCc map[string]uint8 `json:"vm_parameter_to_cc"`
 	VmButtonToCc    map[int]uint8    `json:"vm_button_to_cc"`
+
+	CCTransforms []CCTransformConfig `json:"cc_transforms"`
 }
 
 type MidiDevice struct {
@@ -112,7 +114,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("Loaded config: %+v", config)
+	ccTransforms := buildCCTransformMap(config.CCTransforms)
 
 	n_pads := 8
 	padsStateArray := NewPadsStateArray(n_pads, config.PadsConfig)
@@ -198,14 +200,17 @@ func main() {
 	}
 
 	stopSend, err := midi.ListenTo(sourceMidiDevice.InPort, func(msg midi.Message, milliseconds int32) {
-		if config.Mode == "switch" {
-			var ch, cc, value uint8
-			if msg.GetControlChange(&ch, &cc, &value) {
+		var ch, cc, value uint8
+		if msg.GetControlChange(&ch, &cc, &value) {
+			if config.Mode == "switch" {
 				stateArrayIndex, ok := ccToStateArrayIndex[cc]
 				if ok && value != 0 {
 					padsStateArray.Switch(stateArrayIndex)
 					sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorChangeSysEx("main")))
 				}
+			}
+			if transform, ok := ccTransforms[cc]; ok {
+				msg = midi.ControlChange(ch, cc, applyTransform(value, transform))
 			}
 		}
 		for _, targetMidiDevice := range targetMidiDevices {
@@ -241,7 +246,7 @@ func main() {
 
 	sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorChangeSysEx("main")))
 	sourceMidiDevice.OutPort.Send(midi.SysEx(padsStateArray.ToColorAlternativeChangeSysEx()))
-	return
+
 	if config.Mode == "vm" {
 		vm, vm_events, err := vmInitConnection()
 		log.Printf("Voicemeeter connection established")

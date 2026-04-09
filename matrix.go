@@ -1,7 +1,5 @@
 package main
 
-import "log"
-
 // RGB represents an RGB color.
 type RGB struct {
 	Red   uint8
@@ -172,6 +170,5 @@ func (m *PadsStateArray) ToColorAlternativeChangeSysEx() []byte {
 	// sysex = append(sysex, 0, 0, 0, 0, 0, 0)
 	// sysex = append(sysex, 0, 0, 0, 0, 0)
 
-	log.Printf("Alternative sysex: %v", sysex)
 	return sysex
 }
